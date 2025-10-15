@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <!-- meta for the browser to allow for mobile first design -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+  <title>MythiMap</title>
+
+  <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+    }
+
+    .addRecordBtn {
+  position: absolute;
+  z-index: 10;
+  top: 10px;
+  right: 10px;
+  background-color: #193219;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.addRecordBtn:hover {
+  background-color: #142920;
+}
+
+/* Simple collapsible legend */
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      border: 1px solid #999;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      z-index: 10;
+    }
+
+    .legend-header {
+      background-color: #193219;
+      color: white;
+      padding: 6px;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .legend-content {
+      padding: 8px;
+      display: none; /* start collapsed */
+    }
+
+    #habitat-legend {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 12;          /* above map UI but below buttons if needed */
+  background: rgba(255,255,255,0.95);
+  border-radius: 6px;
+  padding: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+</style>
+
+  <!-- calls for the arcgis api's CSS file and JS library-->
+<link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
+<script src="https://js.arcgis.com/4.26/"></script>
+
+<!-- css to make a full screen map -->
+
+<script>
+  require(["esri/config", "esri/Map", "esri/views/MapView", "esri/widgets/Locate", "esri/widgets/Search", "esri/layers/FeatureLayer" ], (esriConfig, Map, MapView, Locate, Search, FeatureLayer) => {
+
+      esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurN9CA4Z_pltmmtVA5PycbBd6Xh_gP36QMlUpOVbLusJYJ1Lsls6fT7M3k59AjBOhGuLwbAtYGbNGYI8P1AczbQA2fpbC6uks6oTxnkWgyyNoqWx5FNYW1j11ic7FtHw77w0O-EI3bPJ-YElfeb-LM1gF28T9Gtu0XRWpy9m0CGVgmXC-tMurlkO_cNOPceceFojFdv0wRE_9APrRvgKvOGdtQsMgtr86bdyrHx-hCHXYAT1_l9mao6ca";
+
+  const map = new Map({
+      basemap: "dark-gray-vector"
+  });
+
+  const view = new MapView({
+      container: "viewDiv", // Reference to the DOM node that will contain the view
+        map: map, // References the map object
+      center: [-87.6500523, 41.850033], //Long and Lat
+      zoom: 4 , //zoom level
+        
+    });
+
+    const locateBtn = new Locate({
+          view: view
+        });
+
+        // Feature layer for survery
+ const layer = new FeatureLayer({ 
+  // URL to the survey 
+   url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_ed7d5e87968745e9a6ca241ce4359336_results/FeatureServer",
+   outFields: ["*"],
+   //popups
+   popupTemplate: {
+    title: "Cryptid Sighting Report",
+    content:[
+      {
+        type: "fields",
+        fieldInfos: [
+          { fieldName: "CreationDate", label: "Date and Time of Sighting" },
+          { fieldName: "Cryptid", label: "Species" },
+          { fieldName: "Additional Comments", label: "Additional Comments" },
+        ]
+      },
+      {
+        type: "attachments",
+        mediaInfos: [
+          {
+            title: "Sighting Photo",
+            type: "image",
+            caption: "Uploaded by USER",
+            value: {
+              sourceURL: "{Add a photo}" 
+            }
+          }
+        ]
+      }
+    ]
+  },
+   renderer: {
+    type: "simple",
+    symbol: {
+      type: "text",
+      text: "!",                
+      color: "Red",
+      haloColor: "white",
+      haloSize: 2,
+      font: {
+        size: 30,
+        weight: "bold",
+        family: "Arial"
+      }
+    }
+  }
+
+  });
+
+  //adding the historical data
+  const historicLayer = new FeatureLayer({
+  url: "https://services.arcgis.com/tKsJAIiLjd90D5q2/arcgis/rest/services/Cryptids_Sightings/FeatureServer/0",
+  outFields: ["*"],
+  popupTemplate: {
+    title: "Historic Cryptid Sighting",
+    content: [
+      {
+        type: "fields",
+        fieldInfos: [
+          { fieldName: "Date", label: "Date of Sighting" },
+          { fieldName: "CryptidType", label: "Species" },
+
+        ]
+      }
+    ]
+  },
+  renderer: {
+    type: "simple",
+    symbol: {
+      type: "simple-marker",
+      style: "diamond",
+      color: "#808080", 
+      size: 12,
+      outline: { color: "white", width: 1 }
+    }
+  }
+});
+
+//habitat layer
+
+const habitatLayer = new FeatureLayer({
+  url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/USACountiesGeneralized_Merge/FeatureServer",
+  title: "Cryptid Habitats"
+      });
+
+// Add the habitat layer
+map.add(habitatLayer);
+
+// Add the historical layer=
+map.add(historicLayer);
+
+//add the survey layer
+
+map.add(layer);
+
+//legend count
+
+layer.when(() => {
+layer.queryFeatures({ where: "1=1", returnGeometry: false, outFields: ["Cryptid"] })
+  .then(function(results){
+    const counts = {};
+    results.features.forEach(f => {
+      const name = f.attributes.cryptid || "Unknown";
+      counts[name] = (counts[name] || 0) + 1;
+    });
+
+    //legend
+    let html = "";
+    for (const [name, count] of Object.entries(counts)) {
+      html += `<p><b>${name}</b> — ${count}</p>`;
+    }
+
+    //historical data legend key no counts
+     html += `<p><span style="color:#808080;">◆</span> — Historical data</p>`;
+
+     //habitat layer
+     html += `<p><span style="display:inline-block;width:18px;height:12px;background-color:#c2e699;border:1px solid #666;margin-right:6px;vertical-align:middle;"></span> — Cryptid Habitats</p>`;
+
+
+
+    document.getElementById("legend-content").innerHTML = html;
+  });
+
+        // Add the locate widget to the top left corner of the view
+        view.ui.add(locateBtn, {
+          position: "top-left"
+        });
+
+        //query search 
+    const searchWidget = new Search({
+  view: view,
+  sources: [
+    {
+      //survey
+      layer: layer,                
+      searchFields: ["Cryptid"],   
+      displayField: "Cryptid",
+      outFields: ["*"],
+      name: "Recent Sightings",
+      placeholder: "Search recent sightings..."
+    },
+    {
+      //historical
+      layer: historicLayer,       
+      searchFields: ["CryptidType"],
+      displayField: "CryptidType",
+      outFields: ["*"],
+      name: "Historic Sightings",
+      placeholder: "Search historic sightings..."
+    }
+  ]
+});
+
+    view.ui.add(searchWidget, { position: "bottom-left", index: 0})
+  });
+});
+  
+  function toggleLegend() {
+  const content = document.getElementById("legend-content");
+  if (content.style.display === "none" || content.style.display === "") {
+    content.style.display = "block";
+  } else {
+    content.style.display = "none";
+  }
+}
+
+</script>
+  </head>
+  <body>
+  <a href="https://survey123.arcgis.com/share/ed7d5e87968745e9a6ca241ce4359336"target="_blank" class="addRecordBtn">Add Record</a>
+
+ <div class="legend">
+  <div class="legend-header" onclick="toggleLegend()">Legend</div>
+  <div class="legend-content" id="legend-content">
+    <p><b>!</b> — Reported cryptid sighting</p>
+    <p><span style="color:#808080;">◆</span> — Historical data</p>
+  </div>
+</div>
+
+  <div id="viewDiv"></div>
+
+  </body>
+</html>
