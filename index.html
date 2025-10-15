@@ -124,7 +124,7 @@ const habitatLayer = new FeatureLayer({
         view.popup.open({
           location: event.mapPoint,
           features: [graphic],
-          updateLocationEnabled: true
+          updateLocationEnabled: false
         });
 
         //highlight hovered area
@@ -340,3 +340,4 @@ habitatLayer.when(() => {
 
   </body>
 </html>
+
