@@ -202,35 +202,58 @@ const habitatLayer = new FeatureLayer({
 
   //adding the historical data
   const historicLayer = new FeatureLayer({
-  url: "https://services.arcgis.com/tKsJAIiLjd90D5q2/arcgis/rest/services/Cryptids_Sightings/FeatureServer/0",
-  outFields: ["*"],
-  popupTemplate: {
-    title: "Historic Cryptid Sighting",
-    content: [
-      {
-        type: "fields",
-        fieldInfos: [
-          { fieldName: "Date", label: "Date of Sighting" },
-          { fieldName: "CryptidType", label: "Species" },
+    url: "https://services.arcgis.com/tKsJAIiLjd90D5q2/arcgis/rest/services/Cryptids_Sightings/FeatureServer/0",
+    outFields: ["*"],
+    popupTemplate: {
+      title: "Historic Cryptid Sighting",
+      content: [
+        {
+          type: "fields",
+          fieldInfos: [
+            { fieldName: "Date", label: "Date of Sighting" },
+            { fieldName: "CryptidType", label: "Species" }
+          ]
+        },
+        {
+          type: "text",
+          text: `
+            Learn more: {expression/googleSearch}
+          `
+        }
+      ],
+      expressionInfos: [
+        {
+          name: "googleSearch",
+          title: "Google Search Link",
+          expression: `
+            var c = $feature.CryptidType;
+            if (IsEmpty(c)) {
+              return "No species listed.";
+            }
 
-        ]
+            // Format Google search URL
+            var query = Replace(c, " ", "+");
+            var url = "https://www.google.com/search?q=" + query + "+Wikipedia";
+
+            // Markdown-style clickable text: [visible text](URL)
+            return "[" + c + "](" + url + ")";
+          `
+        }
+      ]
+    },
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "simple-marker",
+        style: "diamond",
+        color: "#808080",
+        size: 12,
+        outline: { color: "white", width: 1 }
       }
-    ]
-  },
-  renderer: {
-    type: "simple",
-    symbol: {
-      type: "simple-marker",
-      style: "diamond",
-      color: "#808080", 
-      size: 12,
-      outline: { color: "white", width: 1 }
     }
-  }
-});
+  });
 
-
-// Add the habitat layer
+ // Add the habitat layer
 map.add(habitatLayer);
 
 // Add the historical layer=
